@@ -19,6 +19,7 @@ class Agent:
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
         self.model = Linear_QNet(11, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
+        self.best_score = 0
 
 
     def get_state(self, game):
@@ -99,6 +100,13 @@ class Agent:
 
         return final_move
 
+    def save_best_model(self, score):
+        if score > self.best_score:
+            self.best_score = score
+            self.model.save()
+
+    def load_best_model(self):
+        self.model.load()
 
 def train():
     plot_scores = []
@@ -132,7 +140,7 @@ def train():
 
             if score > record:
                 record = score
-                agent.model.save()
+                agent.save_best_model(score)
 
             print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
@@ -141,7 +149,6 @@ def train():
             mean_score = total_score / agent.n_games
             plot_mean_scores.append(mean_score)
             plot(plot_scores, plot_mean_scores)
-
 
 if __name__ == '__main__':
     train()
