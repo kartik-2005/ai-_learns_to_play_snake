@@ -70,6 +70,22 @@ class Food:
     def draw(self):
         main_win.blit(self.apple_in_transform_surf, self.apple_in_rect)
 
+    def respawn(self, snake_body):         #apple spawns outside the snake's body
+        while True:
+            self.x = randrange(50, 700, 50)
+            self.y = randrange(50, 550, 50)
+            self.apple_in_rect = self.apple_in_surf.get_rect(midbottom=((self.x + 14), (self.y + 25)))
+            
+            # Check if the new apple position overlaps with any part of the snake's body
+            overlapping = False
+            for segment in snake_body:
+                if self.apple_in_rect.colliderect(segment):
+                    overlapping = True
+                    break
+            
+            if not overlapping:
+                break
+
 
 apple = Food()
 
@@ -84,6 +100,8 @@ class Snake:
         self.snake_head = pygame.Rect(self.x, self.y, 50,50) 
         self.snake_body = [pygame.Rect(self.x - 50,self.y, 50, 50)] #list so that on eating, new body (block) is generated
         #head needs to be a block ahead of the body in x dir
+        self.snake_eyes = [pygame.Rect(self.x + 10, self.y + 10, 10, 10), #snake's eyes
+                           pygame.Rect(self.x + 30, self.y + 10, 10, 10)]
         self.is_dead = False
         self.game_over = False
         #self.lives_list = [green_surf, yellow_surf, red_surf]
@@ -126,8 +144,20 @@ class Snake:
         self.snake_head.x += self.xmov * 50  #responds to input event
         self.snake_head.y += self.ymov * 50
         self.snake_body.remove(self.snake_head)
-        
 
+
+    def draw_eyes(self):
+        for eye in self.snake_eyes:
+            pygame.draw.rect(main_win, "black", eye)
+
+    def update_eyes_position(self):
+        # Update eyes positions based on the snake's head position
+        self.snake_eyes[0].x = self.snake_head.x + 10
+        self.snake_eyes[0].y = self.snake_head.y + 10
+        self.snake_eyes[1].x = self.snake_head.x + 30
+        self.snake_eyes[1].y = self.snake_head.y + 10
+
+        
 snake = Snake()
 
 def show_game_over(): #wait 2 seconds after game over to execute following code
@@ -232,6 +262,7 @@ while True:
             main_win.blit(grid_surf, grid_rect)
             grid()
             pygame.draw.rect(main_win, "green2", snake.snake_head)
+            snake.draw_eyes()
             for s in snake.snake_body:
                  pygame.draw.rect(main_win, "green2", s)
             apple.draw() 
@@ -254,6 +285,7 @@ while True:
                 score_game_surf = score_game.render(f"{score}", True, "White")
                 main_win.blit(score_game_surf, (725, 200))
                 snake.positioning()
+                snake.update_eyes_position()
                 #if(snake.lives_list):         -> used for "three lives" in the first stage of the development
                     #for l in snake.lives_list:       
                         #main_win.blit(l, snake.lives_rect[ind])
@@ -265,7 +297,8 @@ while True:
                 if(snake.snake_head.colliderect(apple.apple_in_rect)):
                     score +=1
                     snake.snake_body.append(pygame.Rect(s.x, s.y, 50,50))
-                    apple = Food()
+                    apple.respawn(snake.snake_body)
+                    
         if(snake.game_over):
                 #for i in [green_surf, yellow_surf, red_surf]:
                 # snake.lives_list.append(i)
